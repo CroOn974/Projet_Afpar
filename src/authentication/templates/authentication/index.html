@@ -1,0 +1,49 @@
+
+	{% extends 'base.html' %}
+    {% block content %}
+	<div class="section">
+		<div class="container">
+			<div class="row justify-content-center">
+				<div class="col-12 text-center align-self-center py-5">
+					<div class="section pb-5 pt-5 pt-sm-2 text-center">
+                        {% if messages %}
+                            {% for message in messages %}
+                                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                    {{message}}
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="alert alert-danger alert-dismissible fade" role="alert">
+                                message
+                            </div>
+                        {% endif %}
+						<div class="card-3d-wrap mx-auto">
+							<div class="card-3d-wrapper">
+								<div class="card-front">
+									<div class="center-wrap">
+										<div class="section text-center">
+											<h4 class="mb-4 pb-3">Log In</h4>
+                                            <form action="{% url 'login' %}" method="post">
+                                                {% csrf_token %}
+                                                <div class="form-group">
+                                                    <input type="text" name="loguser" class="form-style" placeholder="Your Username" id="loguser" autocomplete="off">
+                                                    <i class="input-icon uil uil-at"></i>
+                                                </div>	
+                                                <div class="form-group mt-2">
+                                                    <input type="password" name="logpass" class="form-style" placeholder="Your Password" id="logpass" autocomplete="off">
+                                                    <i class="input-icon uil uil-lock-alt"></i>
+                                                </div>
+                                                <button type="submit" class="btn mt-4">submit</button>
+                                                <hr>
+                                            </form>   
+				      					</div>
+			      					</div>
+			      				</div>
+			      			</div>
+			      		</div>
+			      	</div>
+		      	</div>
+	      	</div>
+	    </div>
+	</div>
+    {% endblock %}
