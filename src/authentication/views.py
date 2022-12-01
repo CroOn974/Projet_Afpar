@@ -23,3 +23,4 @@ def log_out(request):
     logout(request)
     messages.success(request, "Vous avez bien etait déconecté")
     return redirect('login')   
+
