@@ -26,26 +26,41 @@ def importCsv (request):
 
             #verifie si le répertoire existe, s'il n'existe pas on le crée
             monRepertoire = 'dashboard/upload/'
+            pourAutorise = request.POST['pourField']
 
             addRepertoire(monRepertoire)
             delFichier(monRepertoire)
             addFichier(monRepertoire,request.FILES["collabField"])
 
             listeFichiers = getListeFichiers(monRepertoire)
-
             for fich in listeFichiers :
                 print(fich)
-                normeFichier( monRepertoire + fich)
-    
-            delFichier(monRepertoire)
+                etatFichier = verifFichier( monRepertoire + fich, pourAutorise)
 
-        redirect("importcsv")
 
-    else:
+            if int(pourAutorise) < etatFichier['Pourcentage de donnée restant']:
 
-        form = ImportVente()
+                redirect('savecsv')
 
-    return render(request, "dashboard/import.html", {"form": form})
+            else:
+
+                return render(request, "dashboard/import.html", {"form": form, "bugs":etatFichier})
+
+    form = ImportVente()
+    return render(request, "dashboard/import.html", {"form": form,})
+
+def saveCsv (request):
+    monRepertoire = 'dashboard/upload/'
+    print('ok')
+    listeFichiers = getListeFichiers(monRepertoire)
+
+    for fich in listeFichiers :
+        print(fich)
+        normeFichier( monRepertoire + fich,)
+
+    return redirect('importcsv')
+
+
 
 #-------------------------------------------------------------------
 #                          NORMALISATION
@@ -78,7 +93,7 @@ def  getListeFichiers(dossier):
     return listeFichiers
 
 # normalise le fichier
-def normeFichier(fichier):
+def verifFichier(fichier, pourcentage):
 
     fichier = pandas.read_csv(fichier, encoding= 'unicode_escape')
     #renomme colonnes
@@ -90,22 +105,64 @@ def normeFichier(fichier):
     fichier = delDoublon(fichier)
     # nombre de ligne en doublon
     nbdelDoublon = nbLigneStart - len(fichier)
+    nbLigneRestant = len(fichier)
+    print(nbLigneRestant)
 
     fichier = delQuantiteNegatif(fichier)
     # nombre de ligne contenant des quantité négatif
-    nbdelQuantiteNegatif = nbdelDoublon - len(fichier)
+    nbdelQuantiteNegatif = nbLigneRestant - len(fichier)
+    nbLigneRestant = len(fichier)
+    print(nbLigneRestant)
 
     fichier = delProbPays(fichier)
     # nombre de ligne ou le nom du pays a un problème
-    nbdelProbPays = nbdelQuantiteNegatif - len(fichier)
+    nbdelProbPays = nbLigneRestant - len(fichier)
+    nbLigneRestant = len(fichier)
+    print(nbLigneRestant)
 
     fichier = delProcCodeProduit(fichier)
     # nombre de ligne ou le code produit a un problème  et les produit sans description
-    nbdelProbProduit = nbdelProbPays - len(fichier)
+    nbdelProbProduit = nbLigneRestant - len(fichier)
+    nbLigneRestant = len(fichier)
+    print(nbLigneRestant)
 
     fichier = delProbDate(fichier)
     # nombre de ligne ou le code produit a un problème  et les produit sans description
-    nbdelProbDate = nbdelProbProduit - len(fichier)
+    nbdelProbDate = nbLigneRestant - len(fichier)
+    nbLigneRestant = len(fichier)
+    print(nbLigneRestant)
+
+    pourRestant = nbLigneRestant * 100 / nbLigneStart
+
+    etatFichier = {
+        'Nombre de ligne initial ': nbLigneStart,
+        'Nombre de ligne en double ': nbdelDoublon,
+        'Nombre de reboursement ': nbdelQuantiteNegatif,
+        'Nombre de code produit ': nbdelProbProduit,
+        'Nombre de ligne avec des problemes de date': nbdelProbDate,
+        'Pourcentage de donnée restant': pourRestant
+    }
+
+    return etatFichier
+
+    #insertFichier(fichier)
+
+# normalise le fichier
+def normeFichier(fichier):
+
+    fichier = pandas.read_csv(fichier, encoding= 'unicode_escape')
+    #renomme colonnes
+    fichier.rename(columns = {'InvoiceNo':'nofacture', 'StockCode':'codeproduit', 'Description':'description', 'Quantity':'quantite', 'InvoiceDate':'datefacture', 'UnitPrice':'prixUnitaire', 'CustomerID':'idClient', 'Country':'nompays'}, inplace = True)
+    
+    fichier = delDoublon(fichier)
+
+    fichier = delQuantiteNegatif(fichier)
+
+    fichier = delProbPays(fichier)
+
+    fichier = delProcCodeProduit(fichier)
+
+    fichier = delProbDate(fichier)
 
     insertFichier(fichier)
 
@@ -292,8 +349,6 @@ def insertAnnee(fichier):
         
     except:
         print("Probleme pour récupéré les années")
-
-    print(existAnnée)
 
     # récupére les année dans le new fichier
     annee = fichier.drop_duplicates(subset=['anneevente'])

@@ -5,5 +5,7 @@ from dashboard import views
 
 urlpatterns = [
     path('', views.dashboard, name="dashboard"),
-    path('import', views.importCsv, name="importcsv")
+    path('import', views.importCsv, name="importcsv"),
+    path('save', views.saveCsv, name="savecsv")
+
 ]
