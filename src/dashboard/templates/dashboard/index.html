@@ -1,4 +1,12 @@
 {%  extends 'base.html' %}
 {% block content %}
-<h1> Gui</h1>
+{%load plotly_dash%}
+<section class="container">
+    <div class="row">
+        <article class="col-md-6">
+            {%plotly_app name="SimpleExample" ratio=1 %}  
+        </article>
+    </div>
+
+</section>
 {% endblock %}

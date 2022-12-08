@@ -9,7 +9,7 @@ from django.db import models
 
 
 class Annee(models.Model):
-    anneevente = models.DateField(primary_key=True)
+    anneevente = models.CharField(primary_key=True, max_length=4)
 
     class Meta:
         managed = False
@@ -17,6 +17,7 @@ class Annee(models.Model):
 
 
 class AuthGroup(models.Model):
+    id = models.IntegerField(primary_key=True)
     name = models.CharField(unique=True, max_length=150)
 
     class Meta:
@@ -25,7 +26,7 @@ class AuthGroup(models.Model):
 
 
 class AuthGroupPermissions(models.Model):
-    id = models.BigAutoField(primary_key=True)
+    id = models.BigIntegerField(primary_key=True)
     group = models.ForeignKey(AuthGroup, models.DO_NOTHING)
     permission = models.ForeignKey('AuthPermission', models.DO_NOTHING)
 
@@ -36,6 +37,7 @@ class AuthGroupPermissions(models.Model):
 
 
 class AuthPermission(models.Model):
+    id = models.IntegerField(primary_key=True)
     name = models.CharField(max_length=255)
     content_type = models.ForeignKey('DjangoContentType', models.DO_NOTHING)
     codename = models.CharField(max_length=100)
@@ -47,6 +49,7 @@ class AuthPermission(models.Model):
 
 
 class AuthUser(models.Model):
+    id = models.IntegerField(primary_key=True)
     password = models.CharField(max_length=128)
     last_login = models.DateTimeField(blank=True, null=True)
     is_superuser = models.BooleanField()
@@ -64,7 +67,7 @@ class AuthUser(models.Model):
 
 
 class AuthUserGroups(models.Model):
-    id = models.BigAutoField(primary_key=True)
+    id = models.BigIntegerField(primary_key=True)
     user = models.ForeignKey(AuthUser, models.DO_NOTHING)
     group = models.ForeignKey(AuthGroup, models.DO_NOTHING)
 
@@ -75,7 +78,7 @@ class AuthUserGroups(models.Model):
 
 
 class AuthUserUserPermissions(models.Model):
-    id = models.BigAutoField(primary_key=True)
+    id = models.BigIntegerField(primary_key=True)
     user = models.ForeignKey(AuthUser, models.DO_NOTHING)
     permission = models.ForeignKey(AuthPermission, models.DO_NOTHING)
 
@@ -96,6 +99,7 @@ class Detail(models.Model):
 
 
 class DjangoAdminLog(models.Model):
+    id = models.IntegerField(primary_key=True)
     action_time = models.DateTimeField()
     object_id = models.TextField(blank=True, null=True)
     object_repr = models.CharField(max_length=200)
@@ -110,6 +114,7 @@ class DjangoAdminLog(models.Model):
 
 
 class DjangoContentType(models.Model):
+    id = models.IntegerField(primary_key=True)
     app_label = models.CharField(max_length=100)
     model = models.CharField(max_length=100)
 
@@ -120,7 +125,7 @@ class DjangoContentType(models.Model):
 
 
 class DjangoMigrations(models.Model):
-    id = models.BigAutoField(primary_key=True)
+    id = models.BigIntegerField(primary_key=True)
     app = models.CharField(max_length=255)
     name = models.CharField(max_length=255)
     applied = models.DateTimeField()
@@ -128,6 +133,31 @@ class DjangoMigrations(models.Model):
     class Meta:
         managed = False
         db_table = 'django_migrations'
+
+
+class DjangoPlotlyDashDashapp(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    instance_name = models.CharField(unique=True, max_length=100)
+    slug = models.CharField(unique=True, max_length=110)
+    base_state = models.TextField()
+    creation = models.DateTimeField()
+    update = models.DateTimeField()
+    save_on_change = models.BooleanField()
+    stateless_app = models.ForeignKey('DjangoPlotlyDashStatelessapp', models.DO_NOTHING)
+
+    class Meta:
+        managed = False
+        db_table = 'django_plotly_dash_dashapp'
+
+
+class DjangoPlotlyDashStatelessapp(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    app_name = models.CharField(unique=True, max_length=100)
+    slug = models.CharField(unique=True, max_length=110)
+
+    class Meta:
+        managed = False
+        db_table = 'django_plotly_dash_statelessapp'
 
 
 class DjangoSession(models.Model):
@@ -151,27 +181,23 @@ class Facture(models.Model):
 
 
 class Histopays(models.Model):
-    idhistopays = models.AutoField(primary_key=True)
-    nompays = models.ForeignKey('Pays', models.DO_NOTHING, db_column='nompays', blank=True, null=True)
-    anneevente = models.ForeignKey(Annee, models.DO_NOTHING, db_column='anneevente', blank=True, null=True)
-    qtachat = models.IntegerField(blank=True, null=True)
+    nompays = models.TextField(blank=True, null=True)
+    anneevente = models.CharField(max_length=4, blank=True, null=True)
+    qtachat = models.BigIntegerField(blank=True, null=True)
 
     class Meta:
         managed = False
         db_table = 'histopays'
-        unique_together = (('nompays', 'anneevente'),)
 
 
 class Histoproduit(models.Model):
-    idhistoproduit = models.AutoField(primary_key=True)
-    codeproduit = models.ForeignKey('Produit', models.DO_NOTHING, db_column='codeproduit', blank=True, null=True)
-    anneevente = models.ForeignKey(Annee, models.DO_NOTHING, db_column='anneevente', blank=True, null=True)
-    qtvente = models.IntegerField(blank=True, null=True)
+    codeproduit = models.TextField(blank=True, null=True)
+    anneevente = models.CharField(max_length=4, blank=True, null=True)
+    qtvente = models.BigIntegerField(blank=True, null=True)
 
     class Meta:
         managed = False
         db_table = 'histoproduit'
-        unique_together = (('codeproduit', 'anneevente'),)
 
 
 class Pays(models.Model):

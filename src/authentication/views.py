@@ -13,7 +13,7 @@ def log_user(request):
         if user is not None:
             login(request, user)
             firstname = user.first_name
-            return redirect('dashboard')
+            return redirect('home')
         else:
             messages.error(request,"Erreur d'authentification ...")
             return redirect('login')

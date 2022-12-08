@@ -23,9 +23,13 @@
             <span class="text-uppercase font-weight-bold">Analysis Features Preprocessing And Research</span>
           </a>
         </div>
-        <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
-            <li class="text-light btn btn-danger">Disconnect</li>
-        </ul>
+          {% if user.is_authenticated %}
+          <ul class="ms-auto mb-2 mb-lg-0 list-inline">
+            <li class="list-inline-item">
+              <a class="btn btn-danger" href="/auth/logout">Deconnexion</a>
+            </li>
+          </ul>
+          {% endif %}
       </nav>
       {% block content %}{% endblock %} 
 </body>

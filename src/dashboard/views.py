@@ -7,15 +7,16 @@ import pandas
 import os
 from sqlalchemy import create_engine
 from django.db import connection
+from django.contrib.auth.decorators import login_required
 
 
 
 # Create your views here.
-
-def dashboard (request):
+@login_required(login_url='/auth')
+def home (request):
     return render(request, 'dashboard/index.html')
 
-
+@login_required(login_url='/auth')
 def importCsv (request):
 
     if request.method == 'POST':
@@ -40,7 +41,7 @@ def importCsv (request):
 
             if int(pourAutorise) < etatFichier['Pourcentage de donnée restant']:
 
-                redirect('savecsv')
+                return redirect('savecsv')
 
             else:
 
@@ -49,9 +50,9 @@ def importCsv (request):
     form = ImportVente()
     return render(request, "dashboard/import.html", {"form": form,})
 
+@login_required(login_url='/auth')
 def saveCsv (request):
     monRepertoire = 'dashboard/upload/'
-    print('ok')
     listeFichiers = getListeFichiers(monRepertoire)
 
     for fich in listeFichiers :
@@ -106,31 +107,27 @@ def verifFichier(fichier, pourcentage):
     # nombre de ligne en doublon
     nbdelDoublon = nbLigneStart - len(fichier)
     nbLigneRestant = len(fichier)
-    print(nbLigneRestant)
 
     fichier = delQuantiteNegatif(fichier)
     # nombre de ligne contenant des quantité négatif
     nbdelQuantiteNegatif = nbLigneRestant - len(fichier)
     nbLigneRestant = len(fichier)
-    print(nbLigneRestant)
 
     fichier = delProbPays(fichier)
     # nombre de ligne ou le nom du pays a un problème
     nbdelProbPays = nbLigneRestant - len(fichier)
     nbLigneRestant = len(fichier)
-    print(nbLigneRestant)
-
+    
     fichier = delProcCodeProduit(fichier)
     # nombre de ligne ou le code produit a un problème  et les produit sans description
     nbdelProbProduit = nbLigneRestant - len(fichier)
     nbLigneRestant = len(fichier)
-    print(nbLigneRestant)
-
+    
     fichier = delProbDate(fichier)
     # nombre de ligne ou le code produit a un problème  et les produit sans description
     nbdelProbDate = nbLigneRestant - len(fichier)
     nbLigneRestant = len(fichier)
-    print(nbLigneRestant)
+    
 
     pourRestant = nbLigneRestant * 100 / nbLigneStart
 
@@ -145,7 +142,6 @@ def verifFichier(fichier, pourcentage):
 
     return etatFichier
 
-    #insertFichier(fichier)
 
 # normalise le fichier
 def normeFichier(fichier):
@@ -309,10 +305,11 @@ def histoPays():
     # récupere le nombre de vente par pays par année
     histoPays = pandas.DataFrame(list(Facture.objects.annotate(anneevente=TruncYear('datefacture')).values('nompays','anneevente').annotate(qtachat=Count('nompays')).order_by()))
     histoPays['anneevente'] = pandas.DatetimeIndex(histoPays.anneevente).year
-    histoPays['anneevente']= histoPays['anneevente'].map(lambda x: pandas.to_datetime(f'{x}-01-01'))
-    histoPays['anneevente'] = pandas.to_datetime(histoPays['anneevente'], format='%Y')
 
+    
     insertAnnee(histoPays)
+    # histoPays['anneevente']= histoPays['anneevente'].astype(str)
+    print(histoPays)
 
     try:
         engine = conDb()
@@ -329,6 +326,8 @@ def histoProduit():
         cursor.execute("select detail.codeproduit, date_trunc('year', datefacture)as df, count(*) from detail inner join facture on facture.nofacture = detail.nofacture group by (detail.codeproduit,df)")
         histoProduits=pandas.DataFrame(list(cursor.fetchall()))
         histoProduits.columns = ["codeproduit", "anneevente", "qtvente"]
+        histoProduits['anneevente'] = pandas.DatetimeIndex(histoProduits.anneevente).year
+
     except:
         print('probleme histoProduit')
 
@@ -345,14 +344,14 @@ def insertAnnee(fichier):
     try:
         # récuoére les année deja présente en bdd
         existAnnée = pandas.DataFrame(list(Annee.objects.all().values()))
-        existAnnée['anneevente'] = existAnnée['anneevente'].dt.year.astype(str)
+        # existAnnée['anneevente'] = existAnnée['anneevente'].dt.year.astype(str)
         
     except:
         print("Probleme pour récupéré les années")
 
     # récupére les année dans le new fichier
     annee = fichier.drop_duplicates(subset=['anneevente'])
-    annee['anneevente'] = annee['anneevente'].dt.year.astype(str)
+    #annee['anneevente'] = annee['anneevente'].dt.year.astype(str)
     
     
     print(annee.info)
