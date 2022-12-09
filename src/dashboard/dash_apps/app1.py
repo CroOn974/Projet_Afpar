@@ -1,85 +1,106 @@
-# from dash import Dash, dcc, html, Input, Output
-# import plotly.express as px
-# from django_plotly_dash import DjangoDash
-# import pandas as pd
-# import dash_bootstrap_components as dbc
-# from dashboard.models import Produit, Pays, Facture, Detail, Annee, Histopays, Histoproduit 
+from dash import Dash, dcc, html, Input, Output
+import plotly.express as px
+from django_plotly_dash import DjangoDash
+import pandas as pd
+import dash_bootstrap_components as dbc
+from dashboard.models import Produit, Pays, Facture, Detail, Annee, Histopays, Histoproduit 
 
 
-# bootstrap_theme=[dbc.themes.BOOTSTRAP,'https://use.fontawesome.com/releases/v5.9.0/css/all.css']
+bootstrap_theme=[dbc.themes.BOOTSTRAP,'https://use.fontawesome.com/releases/v5.9.0/css/all.css']
 
-# print('1')
-# # histoProduit = pd.DataFrame(list(Histoproduit.objects.all().values()))
-# # print(histoProduit)
-# print('1')
-# histoPays = Histopays.objects.all().values()
-# print(histoPays)
-# print('1')
+histoProduit = pd.DataFrame(list(Histoproduit.objects.all().values()))
+histoProduit.rename(columns = {'idhistoproduit' : 'histo', 'codeproduit_id': 'indicator', 'anneevente_id': 'annee', 'qtvente' : 'quantite'}, inplace = True)
+histoProduit['histo'] = 'produit'
 
+histoPays = pd.DataFrame(list(Histopays.objects.all().values()))
+histoPays.rename(columns = {'idhistopays' : 'histo', 'nompays_id': 'indicator', 'anneevente_id': 'annee', 'qtachat' : 'quantite'}, inplace = True)
+histoPays['histo'] = 'pays'
 
-# app = DjangoDash('SimpleExample',external_stylesheets=bootstrap_theme )
-
-# df = pd.read_csv('https://plotly.github.io/datasets/country_indicators.csv')
-
-# # app.layout = html.Div([
-# #     html.Div([
-
-# #         html.Div([
-# #             dcc.Dropdown(
-# #                 df['Indicator Name'].unique(),
-# #                 'Fertility rate, total (births per woman)',
-# #                 id='xaxis-column'
-# #             ),
-# #         ], style={'width': '48%', 'display': 'inline-block'}),
-
-# #     ]),
-
-# #     dcc.Graph(id='indicator-graphic'),
-
-# #     dcc.Slider(
-# #         histoProduit['anneevente'].min(),
-# #         histoProduit['anneevente'].max(),
-# #         step=None,
-# #         id='year--slider',
-# #         value=histoProduit['anneevente'].max(),
-# #         marks={str(annee): str(annee) for annee in histoProduit['anneevente']},
-
-# #     )
-# # ])
+df = pd.concat([histoProduit,histoPays])
 
 
-# # @app.callback(
-# #     Output('indicator-graphic', 'figure'),
-# #     Input('xaxis-column', 'value'),
-# #     Input('yaxis-column', 'value'),
-# #     Input('xaxis-type', 'value'),
-# #     Input('yaxis-type', 'value'),
-# #     Input('year--slider', 'value'))
-# # def update_graph(xaxis_column_name, yaxis_column_name,
-# #                  xaxis_type, yaxis_type,
-# #                  year_value):
+app = DjangoDash('SimpleExample',external_stylesheets=bootstrap_theme )
+
+
+import plotly.graph_objects as go
+
+fig = go.Figure()
+
+app.layout = html.Div([
+
+    html.Div([
+            dcc.Dropdown(
+                df['histo'].unique(),
+                'produit',
+                id='histo-input'
+            )], style={'width': '48%', 'display': 'inline-block'}),
+
+
+    html.Div([dcc.Graph(id='bar_graph',figure=fig)]),
+
+    dcc.Slider(
+        df['annee'].min(),
+        df['annee'].max(),
+        step=None,
+        id='year--slider',
+        value=df['annee'].max(),
+        marks={str(year): str(year) for year in df['annee'].unique()},
+
+    )
+
+
+             
+])
+# https://plotly.com/python/click-events/ ON CLICK
+@app.callback(
+
+    Output('bar_graph', 'figure'),
+    Input('histo-input', 'value'),
+    Input('year--slider', 'value')
+    )
+def update_bar(histo_input,year_value):
+
+    print(year_value)
+    print(type(year_value))
+    dff = df.loc[df['annee'] == str(year_value)]
+
+    print(dff)
+    #Magnitude vs Number
+    if histo_input == "pays": 
+        print(dff)
+        qtproduit = dff.loc[dff['histo'] == "pays"]
+        print(qtproduit)
+
+        fig = go.Figure(go.Bar(x=qtproduit['indicator'],
+                               y=qtproduit['quantite'],
+                               marker_color = 'green',
+                               
+                               ),
+                        go.Layout(  title='Nombre commande par pays',
+                                    title_x = 0.5, 
+                                    xaxis=dict( tickangle=90,
+                                                tickmode='linear',
+                                                tick0=0.1,
+                                                dtick=0.1
+                                    )),
+
+                        )
+        fig.update_layout(barmode='stack', bargap=0.1,bargroupgap=0.1)
+
+    #Depth vs Number
+    elif histo_input == "produit": 
+        
+        qtproduit = dff.loc[dff['histo'] == "produit"]
+
+        fig = go.Figure(go.Bar(x=qtproduit['indicator'],
+                               y=qtproduit['quantite'],
+                               marker_color = 'blue',
+                               
+                               )
+                        )
+
+    else:
+        pass
     
-# #     if dff['Indicator Name'] == "produit":
-# #         dff = df[histoProduit['anneevente'] == year_value]
-
-# #     else:
-# #         dff = df[histoPays['anneevente'] == year_value]
-
-
-# #     fig = px.scatter(x=dff[dff['Indicator Name'] == xaxis_column_name]['Value'],
-# #                      y=dff[dff['Indicator Name'] == yaxis_column_name]['Value'],
-# #                      hover_name=dff[dff['Indicator Name'] == yaxis_column_name]['Country Name'])
-
-# #     fig.update_layout(margin={'l': 40, 'b': 40, 't': 10, 'r': 0}, hovermode='closest')
-
-# #     fig.update_xaxes(title=xaxis_column_name,
-# #                      type='linear' if xaxis_type == 'Linear' else 'log')
-
-# #     fig.update_yaxes(title=yaxis_column_name,
-# #                      type='linear' if yaxis_type == 'Linear' else 'log')
-
-# #     return fig
-
-
-# # if __name__ == '__main__':
-# #     app.run_server(debug=True)
+    return fig
+        

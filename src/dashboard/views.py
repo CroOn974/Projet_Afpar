@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect
 from .forms import ImportVente
-from dashboard.models import Produit, Pays, Facture, Detail, Annee
+from dashboard.models import Produit, Pays, Facture, Detail, Annee, Histopays, Histoproduit
 from django.db.models import Count
 from django.db.models.functions import TruncYear
 import pandas
@@ -306,6 +306,7 @@ def histoPays():
     histoPays = pandas.DataFrame(list(Facture.objects.annotate(anneevente=TruncYear('datefacture')).values('nompays','anneevente').annotate(qtachat=Count('nompays')).order_by()))
     histoPays['anneevente'] = pandas.DatetimeIndex(histoPays.anneevente).year
 
+    Histopays.objects.all().delete()
     
     insertAnnee(histoPays)
     # histoPays['anneevente']= histoPays['anneevente'].astype(str)
@@ -313,7 +314,7 @@ def histoPays():
 
     try:
         engine = conDb()
-        histoPays.to_sql('histopays', engine, if_exists='replace', index=False)
+        histoPays.to_sql('histopays', engine, if_exists='append', index=False)
     except:
         print('probleme histoPays')
 
@@ -321,6 +322,8 @@ def histoPays():
 def histoProduit():
 
     # recupére en dbb le nombre de vente par produit par année
+    Histoproduit.objects.all().delete()
+
     try:
         cursor=connection.cursor()
         cursor.execute("select detail.codeproduit, date_trunc('year', datefacture)as df, count(*) from detail inner join facture on facture.nofacture = detail.nofacture group by (detail.codeproduit,df)")
@@ -334,7 +337,7 @@ def histoProduit():
     # inscrit ce nombre en bdd pour pouvoir l'affiché lus rapidement plus tard
     try:
         engine = conDb()
-        histoProduits.to_sql('histoproduit', engine, if_exists='replace', index=False)
+        histoProduits.to_sql('histoproduit', engine, if_exists='append', index=False)
     except:
         print('probleme histoPays')
 
