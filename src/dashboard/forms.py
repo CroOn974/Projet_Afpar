@@ -2,7 +2,7 @@ from django import forms
 
 class ImportVente(forms.Form):
     collabField = forms.FileField(required=True)
-    pourField = forms.IntegerField(required=True)
+    pourField = forms.IntegerField(initial= 100,min_value = 0, max_value = 100, required=True)
 
 
     def __init__(self, *args, **kwargs):

@@ -16,7 +16,36 @@
 <body>
 
     <!-- Navbar-->
-      <nav class="navbar navbar-expand-sm bg-dark navbar-dark">
+
+    <nav class="navbar navbar-expand-lg navbar-light bg-dark">
+      <div class="container-fluid">
+        <a class="navbar-brand" href="#">
+          <img src="{% static 'img/logo.png' %}" width="45" alt="Logo" class="d-inline-block align-middle mr-2">
+          <span class="text-uppercase font-weight-bold text-light">Analysis Features Preprocessing And Research</span>
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNavDropdown">
+          {% if user.is_authenticated %}
+          <ul class="navbar-nav ">
+            <li class="nav-item">
+              <a class="nav-link  text-light" href="{% url 'home' %}">Dashboard</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link  text-light" href="{% url 'importcsv' %}">Import</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link  text-light" href="{% url 'logout' %}">Deconnexion</a>
+            </li>
+          </ul>
+          {% endif %}
+        </div>
+      </div>
+    </nav>
+
+
+      <!-- <nav class="navbar navbar-expand-sm bg-dark navbar-dark">
         <div class="container-fluid">
           <a class="navbar-brand" href="#">
             <img src="{% static 'img/logo.png' %}" width="45" alt="Logo" class="d-inline-block align-middle mr-2">
@@ -26,11 +55,14 @@
           {% if user.is_authenticated %}
           <ul class="ms-auto mb-2 mb-lg-0 list-inline">
             <li class="list-inline-item">
+              <a class="btn btn-danger" href="{% block url_retour %}{% endblock %}">Retour</a>
+            </li>
+            <li class="list-inline-item">
               <a class="btn btn-danger" href="/auth/logout">Deconnexion</a>
             </li>
           </ul>
           {% endif %}
-      </nav>
+      </nav> -->
       {% block content %}{% endblock %} 
 </body>
 </html>

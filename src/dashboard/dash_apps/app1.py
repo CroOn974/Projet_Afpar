@@ -7,7 +7,7 @@ from dashboard.models import Produit, Pays, Facture, Detail, Annee, Histopays, H
 import math
 import plotly.graph_objects as go
 import dash_html_components as dhtml
-
+from django.db import connection
 
 bootstrap_theme=[dbc.themes.BOOTSTRAP,'https://use.fontawesome.com/releases/v5.9.0/css/all.css']
 
@@ -27,34 +27,56 @@ fig = go.Figure()
 
 app.layout = html.Div([
 
-    html.Div([
-            dhtml.Div(id='output'),
-            dcc.Dropdown(
-                df['histo'].unique(),
-                'produit',
-                id='histo-input'
-            )], style={'width': '48%', 'display': 'inline-block'}),
+    dbc.Row([
 
-    html.Div([
-        dcc.Dropdown(
-            'top 0 a 20',
-             0,
-            id='top-input'
-        )], style={'width': '48%', 'display': 'inline-block'}),
+            dbc.Col([
 
+                html.Div([
+                        dhtml.Div(id='output'),
+                        dcc.Dropdown(
+                            df['histo'].unique(),
+                            'produit',
+                            id='histo-input',
+                        
+                        )], style={'width': '50%', 'display': 'inline-block'}),
 
-    html.Div([dcc.Graph(id='bar_graph',figure=fig)]),
+            ]),
+            
+            dbc.Col([
 
-    dcc.Slider(
-        step=None,
-        id='year-slider',
-        value=df['annee'].min(),
-        marks={str(year): str(year) for year in df['annee'].unique()},
+                html.Div([
+                    dcc.Dropdown(
+                        'top 0 a 20',
+                        0,
+                        id='top-input',
+                
+                        )], style={'width': '50%', 'display': 'inline-block'}),
 
-    )
+            ]),
 
-#Region.objects.annotate(invoice_details = Count('invoice__details')).order_by('-invoice_details')
-             
+    ]),
+
+    dbc.Row([
+
+            dbc.Col([
+
+                html.Div([dcc.Graph(id='bar_graph',figure=fig)]),
+
+                dbc.Label("Slider", html_for="slider"),
+                dcc.Slider(
+                    step=None,
+                    id='year-slider',
+                    value=df['annee'].min(),
+                    marks={str(year): str(year) for year in df['annee'].unique()},
+                ),
+                
+            ]),
+            dbc.Col([
+                html.Div([dcc.Graph(id='pie_graph',figure=fig)]),
+        ]),
+            
+    ]),
+    
 ])
 
 # https://plotly.com/python/click-events/ ON CLICK
@@ -84,7 +106,7 @@ def update_bar(histo_input,top_input,year_value):
     # construit le graphique
     fig = go.Figure(go.Bar(x=qtproduit['indicator'],
                             y=qtproduit['quantite'],
-                            marker_color = 'green',
+                            
                             
                             ),
                     go.Layout(  title='Nombre commande par '+ histo_input +'',
@@ -92,8 +114,6 @@ def update_bar(histo_input,top_input,year_value):
                             ),
 
                     )
-
-    fig.update_layout(barmode='stack', bargap=0.1,bargroupgap=0.1)
 
     return fig
 
@@ -120,8 +140,38 @@ def update_dropdown(histo_input,year_value):
     return [{'label': 'top '+ str(i *20) + ' à top ' + str((i+1)*20) +'', 'value': i} for i in range(int(nbPart))]
 
 
+@app.callback(
+    Output('pie_graph', 'figure'),
+    Input('bar_graph', 'clickData'),
+    Input('year-slider', 'value'),
+    Input('histo-input', 'value'),
+    )
+def display_click_data(clickData,year_slider,histo_input):
 
+    year_slider = str(year_slider)
 
+    clickValue = clickData['points'][0]['label']
 
-    
+    if histo_input == 'produit':
 
+        try:
+            cursor=connection.cursor()
+            cursor.execute("SELECT nompays,detail.codeproduit, COUNT(*) as qt from detail INNER JOIN facture on facture.nofacture = detail.nofacture WHERE detail.codeproduit ='" + clickValue + "' and TO_CHAR(datefacture, 'YYYY') = '" + year_slider + "' GROUP BY (nompays,detail.codeproduit) ORDER BY qt desc limit 10")
+            data=pd.DataFrame(list(cursor.fetchall()))
+            data.columns = ["name", "codeproduit", "qtvente"]
+            
+        except:
+            print('probleme click produit')
+
+    elif histo_input == 'pays':
+
+        try:
+            cursor=connection.cursor()
+            cursor.execute("SELECT nompays,detail.codeproduit, COUNT(*) as qt from detail INNER JOIN facture on facture.nofacture = detail.nofacture inner join produit on produit.codeproduit = detail.codeproduit WHERE nompays ='" + clickValue + "' and TO_CHAR(datefacture, 'YYYY') = '" + year_slider + "' GROUP BY (nompays,detail.codeproduit) ORDER BY qt desc limit 10")
+            data=pd.DataFrame(list(cursor.fetchall()))
+            data.columns = ["pays", "name", "qtvente"]
+
+        except:
+            print('probleme click produit')
+
+    return px.pie(data, values='qtvente', names='name', title=''+ clickValue +'', hole=.3)

@@ -17,7 +17,7 @@ class Annee(models.Model):
 
 class Detail(models.Model):
     iddetail = models.AutoField(primary_key=True)
-    nofacture = models.ForeignKey('Facture', models.DO_NOTHING, db_column='nofacture')
+    nofacture = models.ForeignKey('Facture', models.DO_NOTHING, db_column='nofacture', related_name='detail')
     codeproduit = models.ForeignKey('Produit', models.DO_NOTHING, db_column='codeproduit')
 
     class Meta:

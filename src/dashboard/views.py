@@ -283,8 +283,9 @@ def insertFacture(fichier):
 def insertDetail(fichier):
 
     # récupere detail commandes existant
-    existDetails = pandas.DataFrame(list(Detail.objects.all().values()))
+    existDetails = pandas.DataFrame(list(Detail.objects.all().values('nofacture_id','codeproduit_id')))
     existDetails.rename(columns = {'nofacture_id' : 'nofacture','codeproduit_id' : 'codeproduit'}, inplace = True)
+    # existDetails.drop('iddetail', axis=1, inplace=True)
     
     # detail commandes contenue dans le nouveau fichier
     details = fichier[['nofacture','codeproduit']]
@@ -292,9 +293,8 @@ def insertDetail(fichier):
     # concat les 2 dataframe et delete les doublon
     newDetails = pandas.concat([existDetails,details,existDetails]).drop_duplicates(keep=False)
 
-    engine = conDb()
-
     try:
+        engine = conDb()
         newDetails.to_sql('detail', engine, if_exists='append', index=False)
     except:
         print('probleme insertDetail')
@@ -303,14 +303,16 @@ def insertDetail(fichier):
 def histoPays():
 
     # récupere le nombre de vente par pays par année
-    histoPays = pandas.DataFrame(list(Facture.objects.annotate(anneevente=TruncYear('datefacture')).values('nompays','anneevente').annotate(qtachat=Count('nompays')).order_by()))
-    histoPays['anneevente'] = pandas.DatetimeIndex(histoPays.anneevente).year
+    histoPays = pandas.DataFrame(list(Detail.objects.select_related('nofacture').values('nofacture__nompays','nofacture__datefacture__year').annotate(Count('nofacture__nompays'),Count('nofacture__datefacture__year'))))
+    #histoPays['anneevente'] = pandas.DatetimeIndex(histoPays.anneevente).year
+    histoPays.drop('nofacture__datefacture__year__count', axis=1, inplace=True)
+    histoPays.rename(columns = {'nofacture__nompays' : 'nompays','nofacture__datefacture__year' : 'anneevente', 'nofacture__nompays__count': 'qtachat'}, inplace = True)
 
+    # vide table histopays
     Histopays.objects.all().delete()
     
+    histoPays['anneevente']= histoPays['anneevente'].astype(str)
     insertAnnee(histoPays)
-    # histoPays['anneevente']= histoPays['anneevente'].astype(str)
-    print(histoPays)
 
     try:
         engine = conDb()
@@ -368,5 +370,5 @@ def insertAnnee(fichier):
         engine = conDb()
         newAnnee.to_sql('annee', engine, if_exists='append', index=False)
     except:
-         print('probleme insertAnnee')
+        print('probleme insertAnnee')
 
