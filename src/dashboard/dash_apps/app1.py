@@ -22,6 +22,7 @@ histoPays['histo'] = 'pays'
 df = pd.concat([histoProduit,histoPays])
 
 app = DjangoDash('SimpleExample',external_stylesheets=bootstrap_theme )
+app.css.append_css({ "external_url" : "/static/css/app1.css" })
 
 fig = go.Figure()
 
@@ -38,7 +39,7 @@ app.layout = html.Div([
                             'produit',
                             id='histo-input',
                         
-                        )], style={'width': '50%', 'display': 'inline-block'}),
+                        )], style={'width': '40%', 'display': 'inline-block'}),
 
             ]),
             
@@ -50,11 +51,11 @@ app.layout = html.Div([
                         0,
                         id='top-input',
                 
-                        )], style={'width': '50%', 'display': 'inline-block'}),
+                        )], style={'width': '40%', 'display': 'inline-block'}),
 
             ]),
 
-    ]),
+    ],className="g-0"),
 
     dbc.Row([
 
@@ -62,7 +63,7 @@ app.layout = html.Div([
 
                 html.Div([dcc.Graph(id='bar_graph',figure=fig)]),
 
-                dbc.Label("Slider", html_for="slider"),
+                dbc.Label("Année", html_for="slider"),
                 dcc.Slider(
                     step=None,
                     id='year-slider',
@@ -70,14 +71,14 @@ app.layout = html.Div([
                     marks={str(year): str(year) for year in df['annee'].unique()},
                 ),
                 
-            ]),
+            ]), 
             dbc.Col([
                 html.Div([dcc.Graph(id='pie_graph',figure=fig)]),
         ]),
             
-    ]),
+    ],className="g-0"),
     
-])
+],style = {'text-align': 'center'})
 
 # https://plotly.com/python/click-events/ ON CLICK
 @app.callback(
@@ -102,15 +103,15 @@ def update_bar(histo_input,top_input,year_value):
     topDebut = top_input * 20
     topFin = (top_input + 1) * 20
     qtproduit = qtproduit.iloc[topDebut : topFin,:]
-
+    import numpy as np
     # construit le graphique
-    fig = go.Figure(go.Bar(x=qtproduit['indicator'],
-                            y=qtproduit['quantite'],
-                            
+    fig = go.Figure(go.Bar(     x=qtproduit['indicator'],
+                                y=qtproduit['quantite'],
                             
                             ),
                     go.Layout(  title='Nombre commande par '+ histo_input +'',
-                                title_x = 0.5, 
+                                title_x = 0.5,
+                                barmode='overlay' 
                             ),
 
                     )
@@ -139,7 +140,7 @@ def update_dropdown(histo_input,year_value):
     #retourne les option du dropdown
     return [{'label': 'top '+ str(i *20) + ' à top ' + str((i+1)*20) +'', 'value': i} for i in range(int(nbPart))]
 
-
+# S'execute quand on click sur un bar de l'histogramme
 @app.callback(
     Output('pie_graph', 'figure'),
     Input('bar_graph', 'clickData'),
@@ -150,28 +151,51 @@ def display_click_data(clickData,year_slider,histo_input):
 
     year_slider = str(year_slider)
 
+    # récupére le label de la barre
     clickValue = clickData['points'][0]['label']
 
+    # determine si c'est un pays ou un produit
     if histo_input == 'produit':
 
+        # récupere le top 10 des pays ayant le plus commandé ce produit
         try:
             cursor=connection.cursor()
-            cursor.execute("SELECT nompays,detail.codeproduit, COUNT(*) as qt from detail INNER JOIN facture on facture.nofacture = detail.nofacture WHERE detail.codeproduit ='" + clickValue + "' and TO_CHAR(datefacture, 'YYYY') = '" + year_slider + "' GROUP BY (nompays,detail.codeproduit) ORDER BY qt desc limit 10")
+            cursor.execute("SELECT nompays,detail.codeproduit,description, COUNT(*) as qt from detail INNER JOIN facture on facture.nofacture = detail.nofacture INNER JOIN produit on detail.codeproduit = produit.codeproduit WHERE detail.codeproduit ='" + clickValue + "' and TO_CHAR(datefacture, 'YYYY') = '" + year_slider + "' GROUP BY (nompays,detail.codeproduit,description) ORDER BY qt desc limit 10")
             data=pd.DataFrame(list(cursor.fetchall()))
-            data.columns = ["name", "codeproduit", "qtvente"]
-            
+            data.columns = ["name", "codeproduit","nom","qtvente"]
+            clickValue = clickValue + ' : ' + data["nom"][0]
+
+
         except:
             print('probleme click produit')
 
     elif histo_input == 'pays':
 
+        # récupere le top 10 des produit le plus commandé par ce pays
         try:
             cursor=connection.cursor()
-            cursor.execute("SELECT nompays,detail.codeproduit, COUNT(*) as qt from detail INNER JOIN facture on facture.nofacture = detail.nofacture inner join produit on produit.codeproduit = detail.codeproduit WHERE nompays ='" + clickValue + "' and TO_CHAR(datefacture, 'YYYY') = '" + year_slider + "' GROUP BY (nompays,detail.codeproduit) ORDER BY qt desc limit 10")
+            cursor.execute("SELECT nompays,detail.codeproduit,description, COUNT(*) as qt from detail INNER JOIN facture on facture.nofacture = detail.nofacture INNER JOIN produit on produit.codeproduit = detail.codeproduit WHERE nompays ='" + clickValue + "' and TO_CHAR(datefacture, 'YYYY') = '" + year_slider + "' GROUP BY (nompays,detail.codeproduit,description) ORDER BY qt desc limit 10")
             data=pd.DataFrame(list(cursor.fetchall()))
-            data.columns = ["pays", "name", "qtvente"]
+            data.columns = ["pays", "name", "description","qtvente"]
+            # data['over'] = data["codeproduit"] + " : " + data["description"]
+            
+            # cursor.execute("SELECT nompays,COUNT(*) as qt from detail INNER JOIN facture on facture.nofacture = detail.nofacture INNER JOIN produit on detail.codeproduit = produit.codeproduit  WHERE nompays ='" + clickValue + "' and TO_CHAR(datefacture, 'YYYY') = '" + year_slider + "' GROUP BY (nompays)")
+            # totalVente=pd.DataFrame(list(cursor.fetchall()))
+            # totalVente.columns = ["pays","qtvente"]
 
+            # sumData = data.sum(axis=1)
+            # nbReste = totalVente['qtvente'] - sumData
+
+            # reste = pd.DataFrame({'pays' : data['pays'][0], 'name' : 'reste', 'description' :  data['description'][0], 'qtvente': nbReste})
+
+            # data = pd.concat([data,reste])
+
+            # print(data)
         except:
             print('probleme click produit')
 
-    return px.pie(data, values='qtvente', names='name', title=''+ clickValue +'', hole=.3)
+    pie = px.pie(data, values='qtvente', names='name', title=''+ clickValue +'', hole=.3)
+    
+
+    # retoune le graphique
+    return pie

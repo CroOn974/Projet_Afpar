@@ -4,17 +4,6 @@
   padding: 0;
 }
 
-.row.no-gutter {
-  margin-left: 0 !important;
-  margin-right: 0 !important;
-}
-
-.row.no-gutter [class*='col']:not(:first-child),
-.row.no-gutter [class*='col']:not(:last-child) {
-  padding-right: 0 !important;
-  padding-left: 0 !important;
-}
-
 body{
 	font-family: 'Poppins', sans-serif;
 	font-weight: 300;
