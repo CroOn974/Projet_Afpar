@@ -1,0 +1,14 @@
+.app-dash{
+    background-color: black !important;
+}
+
+.nav-item:hover{
+
+    background-color: #ffeba7;
+    
+}
+
+a:hover{
+    color: black !important;
+
+}

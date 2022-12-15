@@ -76,7 +76,7 @@ app.layout = html.Div([
                 html.Div([dcc.Graph(id='pie_graph',figure=fig)]),
         ]),
             
-    ],className="g-0"),
+    ],className="g-0",style={'height' : '100 vh'}),
     
 ],style = {'text-align': 'center'})
 
@@ -138,7 +138,7 @@ def update_dropdown(histo_input,year_value):
     nbPart = math.ceil(len(qtproduit) / nbDec)
 
     #retourne les option du dropdown
-    return [{'label': 'top '+ str(i *20) + ' à top ' + str((i+1)*20) +'', 'value': i} for i in range(int(nbPart))]
+    return [{'label': 'top '+ str(1+(i *20)) + ' à top ' + str((i+1)*20) +'', 'value': i} for i in range(int(nbPart))]
 
 # S'execute quand on click sur un bar de l'histogramme
 @app.callback(
@@ -190,12 +190,11 @@ def display_click_data(clickData,year_slider,histo_input):
 
             # data = pd.concat([data,reste])
 
-            # print(data)
         except:
             print('probleme click produit')
 
     pie = px.pie(data, values='qtvente', names='name', title=''+ clickValue +'', hole=.3)
-    
+    pie.update_layout(title_pad_b= 100)
 
     # retoune le graphique
     return pie
