@@ -8,6 +8,7 @@ import os
 from sqlalchemy import create_engine
 from django.db import connection
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
 
 
 
@@ -59,6 +60,7 @@ def saveCsv (request):
         print(fich)
         normeFichier( monRepertoire + fich,)
 
+    messages.success(request, "Csv enregistré")
     return redirect('importcsv')
 
 
