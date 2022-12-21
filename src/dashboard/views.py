@@ -230,8 +230,10 @@ def insertProduit(fichier):
     produits = fichier[['codeproduit','description']]
     produits = produits.drop_duplicates(subset=['codeproduit'])
 
-    # concat les 2 dataframe et delete les doublon
-    newProduit = pandas.concat([existProduit,produits,existProduit]).drop_duplicates(keep=False)
+    # enleve du datagframe des produit deja en bdd
+    newProduit = produits[~produits.codeproduit.isin(existProduit.codeproduit)]
+
+    print(newProduit.values)
 
     engine = conDb()
 
