@@ -144,7 +144,6 @@ def verifFichier(fichier, pourcentage):
 
     return etatFichier
 
-
 # normalise le fichier
 def normeFichier(fichier):
 
@@ -303,7 +302,7 @@ def insertDetail(fichier):
     except:
         print('probleme insertDetail')
 
-
+# insert histoPays
 def histoPays():
 
     # récupere le nombre de vente par pays par année
@@ -324,7 +323,7 @@ def histoPays():
     except:
         print('probleme histoPays')
 
-
+# insert histoProduit
 def histoProduit():
 
     # recupére en dbb le nombre de vente par produit par année
@@ -347,7 +346,7 @@ def histoProduit():
     except:
         print('probleme histoPays')
 
- 
+# insert Annee
 def insertAnnee(fichier):
 
     try:

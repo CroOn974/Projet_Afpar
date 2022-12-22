@@ -80,7 +80,7 @@ app.layout = html.Div([
     
 ],style = {'text-align': 'center'})
 
-# https://plotly.com/python/click-events/ ON CLICK
+
 @app.callback(
 
     Output('bar_graph', 'figure'),
@@ -140,6 +140,7 @@ def update_dropdown(histo_input,year_value):
     #retourne les option du dropdown
     return [{'label': 'top '+ str(1+(i *20)) + ' à top ' + str((i+1)*20) +'', 'value': i} for i in range(int(nbPart))]
 
+# https://plotly.com/python/click-events/
 # S'execute quand on click sur un bar de l'histogramme
 @app.callback(
     Output('pie_graph', 'figure'),
